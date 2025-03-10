@@ -1,0 +1,207 @@
+
+using System.ComponentModel.DataAnnotations;
+
+public class Employee
+{
+    public int Id { get; set; }
+
+    [Required(ErrorMessage = "Name Required ")]
+    public string Name { get; set; }
+
+    [Required(ErrorMessage = "Position Required ")]
+    public string Position { get; set; }
+
+    [Required(ErrorMessage = "section Required ")]
+    public string Department { get; set; }
+
+    [EmailAddress(ErrorMessage = "Email is invalid ")]
+    public string Email { get; set; }
+
+    [Phone(ErrorMessage = "Invalid phone number ")]
+    public string PhoneNumber { get; set; }
+
+    [Range(0, 1000000, ErrorMessage = "Salary must be between 0 and 1,000,000")]
+    public decimal Salary { get; set; }
+}
+
+
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+
+public class AppDbContext : IdentityDbContext<ApplicationUser>
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+    public DbSet<Employee> Employees { get; set; }
+}
+
+
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+[ApiController]
+[Route("api/[controller]")]
+public class EmployeeController : ControllerBase
+{
+    private readonly AppDbContext _context;
+
+    public EmployeeController(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
+    {
+        return await _context.Employees.ToListAsync();
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<Employee>> CreateEmployee(Employee employee)
+    {
+        _context.Employees.Add(employee);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetEmployees), new { id = employee.Id }, employee);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
+    {
+        if (id != employee.Id) return BadRequest();
+        _context.Entry(employee).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteEmployee(int id)
+    {
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return NotFound();
+        _context.Employees.Remove(employee);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+}
+
+
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+public class EmployeesModel : PageModel
+{
+    private readonly AppDbContext _context;
+
+    public EmployeesModel(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    [BindProperty(SupportsGet = true)]
+    public string SearchTerm { get; set; }
+
+    public IList<Employee> Employees { get; set; }
+
+    public async Task OnGetAsync()
+    {
+        var query = _context.Employees.AsQueryable();
+        if (!string.IsNullOrEmpty(SearchTerm))
+        {
+            query = query.Where(e => 
+                e.Name.Contains(SearchTerm) || 
+                e.Department.Contains(SearchTerm));
+        }
+        Employees = await query.ToListAsync();
+    }
+}
+
+
+@page
+@model EmployeesModel
+@{
+    ViewData["Title"] = "Staff management";
+}
+
+<h2> List of employees</h2>
+
+<form method="get">
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" name="search" placeholder="Search by name or section ..." value="@Model.SearchTerm">
+        <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Position</th>
+            <th>section</th>
+            <th>Mail</th>
+            <th>Salary</th>
+            <th>Procedures</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employee in Model.Employees)
+        {
+            <tr>
+                <td>@employee.Name</td>
+                <td>@employee.Position</td>
+                <td>@employee.Department</td>
+                <td>@employee.Email</td>
+                <td>@employee.Salary</td>
+                <td>
+                    <a asp-page="./Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-warning">Amendment</a>
+                    <a asp-page="./Delete" asp-route-id="@employee.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-page="./Create" class="btn btn-success">Add an employee</a>
+
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => 
+    options.SignIn.RequireConfirmedAccount = false)
+    .AddEntityFrameworkStores<AppDbContext>();
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
+
+var app = builder.Build();
+
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapRazorPages();
+
+app.Run();

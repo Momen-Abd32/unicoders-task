@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 900px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="d-flex justify-content-center align-items-center vh-100">
+    <div class="container">
+        <h2 class="text-center mb-4">Employee List</h2>
+        
+   
+        <form method="get" class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by name or department...">
+                <button class="btn btn-primary" type="button" onclick="searchEmployees()">Search</button>
+            </div>
+        </form>
+        
+        
+        <table class="table table-bordered text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Department</th>
+                    <th>Email</th>
+                    <th>Salary</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="employeeTable">
+                <tr>
+                    <td>Moamen</td>
+                    <td>Computer science</td>
+                    <td>IT</td>
+                    <td>moamen@email.com</td>
+                    <td>5000</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm">Edit</button>
+                        <button class="btn btn-danger btn-sm">Delete</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Malek</td>
+                    <td>Accountant</td>
+                    <td>Finance</td>
+                    <td>malek@email.com</td>
+                    <td>4000</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm">Edit</button>
+                        <button class="btn btn-danger btn-sm">Delete</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Mohammed</td>
+                    <td>HR Manager</td>
+                    <td>Human Resources</td>
+                    <td>mohammed@email.com</td>
+                    <td>6000</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm">Edit</button>
+                        <button class="btn btn-danger btn-sm">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <a href="#" class="btn btn-success">Add Employee</a>
+    </div>
+    
+    <script>
+        function searchEmployees() {
+            let searchTerm = document.getElementById("searchInput").value.toLowerCase();
+            let rows = document.querySelectorAll("#employeeTable tr");
+            rows.forEach(row => {
+                let name = row.cells[0].textContent.toLowerCase();
+                let department = row.cells[2].textContent.toLowerCase();
+                if (name.includes(searchTerm) || department.includes(searchTerm)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
